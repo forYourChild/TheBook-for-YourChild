@@ -1,6 +1,6 @@
 from flask import render_template
-from . import views_bp
+from . import onboarding_bp
 
-@views_bp.route('/')
+@onboarding_bp.route('/')
 def flask_main() :
     return render_template('index.html')

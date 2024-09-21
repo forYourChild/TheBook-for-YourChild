@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_session import Session
 from redis import Redis
-from views import views_blueprints
+from views import onboarding_blueprints
 from modules.oauth import define_oauth
 from datetime import timedelta
 import os
@@ -40,7 +40,7 @@ Session(app)
 define_oauth(app)
 
 # Blueprint 등록
-views_blueprints(app)
+onboarding_blueprints(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

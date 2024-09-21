@@ -41,4 +41,4 @@ def google_callback():
     session['user_id'] = user_id
 
     # 사용자 정보를 처리한 후 대시보드로 리다이렉트
-    return redirect(url_for('auth.dashboard'))
+    return redirect(url_for('onboarding.flask_main'))
