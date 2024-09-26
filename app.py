@@ -6,6 +6,9 @@ from modules.oauth import define_oauth
 from datetime import timedelta
 import os
 
+current_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(current_path)
+
 app = Flask(__name__)
 
 # Flask 앱에 필요한 설정 추가

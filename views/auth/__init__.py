@@ -2,4 +2,5 @@ from flask import Blueprint
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-from . import register
+from views.auth.google_login import google_login, google_callback
+from views.auth.traditional_authentication import login_post
