@@ -1,0 +1,195 @@
+/* General styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f3e5ab; /* 따뜻한 배경색 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.register-box {
+    background-color: #fff8e1;
+    padding: 40px 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+h2 {
+    font-size: 2rem;
+    color: #8d6e63;
+    margin-bottom: 20px;
+}
+
+/* Input Group Styling */
+.input-group {
+    display: flex;
+    align-items: center;
+    background-color: #f9ecd0; /* 기본 배경색 */
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent; /* 기본 상태에서 투명한 테두리 */
+}
+
+.input-group.active {
+    background-color: #f4d4a4; /* 포커스된 상태의 배경색 */
+    border-color: #8d6e63; /* 포커스된 상태의 테두리 */
+}
+
+.input-group .material-symbols-outlined {
+    font-size: 24px;
+    color: #888; /* 기본 아이콘 색상 */
+    margin-right: 10px;
+    transition: color 0.3s ease;
+}
+
+.input-group.active .material-symbols-outlined {
+    color: #5d4037; /* 포커스 상태에서 아이콘 색상 변경 */
+}
+
+.input-group input {
+    background: none;
+    border: none;
+    outline: none;
+    color: #5d4037; /* 텍스트 색상 */
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+.input-group input::placeholder {
+    color: #888; /* 플레이스홀더 색상 */
+}
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 40px; /* 아이콘 공간 확보 */
+}
+
+/* Toggle Password Visibility */
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    font-size: 24px;
+    color: #888;
+    transition: color 0.3s ease;
+}
+
+.toggle-password:hover {
+    color: #5d4037; /* 호버 시 색상 변경 */
+}
+
+/* Button Styling */
+.btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.register-btn {
+    background-color: #8d6e63;
+    color: white;
+}
+
+.register-btn:hover {
+    background-color: #5d4037;
+}
+
+.google-btn {
+    background-color: white;
+    color: #5d4037;
+    border: 1px solid #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.google-btn:hover {
+    background-color: #f3f3f3;
+}
+
+.google-logo {
+    width: 20px;
+    height: auto;
+}
+
+/* Password requirements styling */
+#password-requirements {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.requirement {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    color: red; /* 기본값으로 빨간색 */
+}
+
+.requirement span {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+.requirement.invalid {
+    color: red; /* 충족되지 않으면 빨간색 */
+}
+
+.requirement.valid {
+    color: green; /* 충족되면 초록색 */
+}
+
+.requirement.invalid .check-symbol {
+    content: "❌";
+}
+
+.requirement.valid .check-symbol {
+    content: "✔️";
+}
+
+/* Links for Login */
+.register-links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 15px;
+}
+
+.register-links a {
+    color: #8d6e63;
+    text-decoration: none;
+}
+
+.register-links a:hover {
+    text-decoration: underline;
+}
