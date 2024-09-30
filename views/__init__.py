@@ -8,3 +8,4 @@ from .auth import auth_bp
 def onboarding_blueprints(app):
     app.register_blueprint(onboarding_bp)
     app.register_blueprint(auth_bp)
+    

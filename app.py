@@ -4,6 +4,8 @@ from redis import Redis
 from views import onboarding_blueprints
 from modules.oauth import define_oauth
 from datetime import timedelta
+from flask_mail import Mail
+from flask_wtf.csrf import CSRFProtect
 import os
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -12,13 +14,26 @@ os.chdir(current_path)
 app = Flask(__name__)
 
 # Flask 앱에 필요한 설정 추가
-app.secret_key = os.getenv('FLASK_SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+
+# CSRF 보호 활성화
+csrf = CSRFProtect(app)
 
 # Redis 설정 (세션 저장소)
 try:
     app.config['SESSION_REDIS'] = Redis(host='localhost', port=6379)
 except Exception as e:
     print(f"Redis 연결 오류: {e}")
+
+# Flask-Mail 설정
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('SERVICE_EMAIL')
+app.config['MAIL_PASSWORD'] = os.getenv('SERVICE_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SERVICE_EMAIL')
+mail = Mail(app)
 
 app.config['SESSION_TYPE'] = 'redis'  # 세션을 Redis에 저장
 app.config['SESSION_PERMANENT'] = True  # 세션 영구 저장 활성화

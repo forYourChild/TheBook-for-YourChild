@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Register - The Book For Your Child</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="../static/css/register-style.css">
@@ -17,12 +18,18 @@
                 <span class="material-symbols-outlined">person</span>
                 <input type="text" id="name" placeholder="Enter your name" required>
             </div>
-
+            
+            <span id="email-notification"></span>
             <!-- Email Input -->
             <div class="input-group" id="email-group">
                 <span class="material-symbols-outlined">mail</span>
                 <input type="email" id="email" placeholder="Enter your email" required>
             </div>
+
+            <!-- Email Verification Button (Initially Hidden) -->
+            <button class="btn email-verification-btn" id="send-verification-code-btn" style="display:none;">
+                Send Verification Code
+            </button>
 
             <!-- Password Input with toggle visibility -->
             <div class="input-group" id="password-group">
@@ -36,10 +43,10 @@
             <!-- Password validation display -->
             <div id="password-requirements">
                 <div class="requirement invalid" id="min-length">
-                    <span class="check-symbol">❌</span> Password must be at least 10 characters long.
+                    <span class="check-symbol">X</span> Password must be at least 10 characters long.
                 </div>
                 <div class="requirement invalid" id="special-char">
-                    <span class="check-symbol">❌</span> Password must include a special character.
+                    <span class="check-symbol">X</span> Password must include a special character.
                 </div>
             </div>
 
@@ -52,24 +59,41 @@
                 </div>
             </div>
 
-            <!-- Password validation display -->
-            <div id="password-requirements">
+            <!-- Password match display -->
+            <div id="password-check">
                 <div class="requirement invalid" id="password-match">
-                    <span class="check-symbol">❌</span> Passwords must match.
+                    <span class="check-symbol">X</span> Passwords must match.
                 </div>
             </div>
 
-            <!-- Submit Button -->
-            <button class="btn register-btn">Register</button>
+            <!-- Submit Button (Initially Disabled) -->
+            <button class="btn register-btn" id="register-btn" disabled>Register</button>
 
             <!-- Google Login Button -->
-            <button class="btn google-btn">
+            <button class="btn google-btn" id="google-login-btn">
                 <img src="../static/images/google-logo.png" alt="Google Logo" class="google-logo"> Register with Google
             </button>
         </div>
     </div>
 
-    <!-- JavaScript for form validation and password visibility -->
+    <!-- Popup for entering the verification code -->
+    <div id="verification-popup" class="popup">
+        <div class="popup-content">
+            <h2>Enter Verification Code</h2>
+            <div class="code-inputs">
+                <input type="text" maxlength="1" class="code-input" id="code1">
+                <input type="text" maxlength="1" class="code-input" id="code2">
+                <input type="text" maxlength="1" class="code-input" id="code3">
+                <input type="text" maxlength="1" class="code-input" id="code4">
+                <input type="text" maxlength="1" class="code-input" id="code5">
+                <input type="text" maxlength="1" class="code-input" id="code6">
+            </div>
+            <div id="timer" style="margin-top: 20px; font-size: 18px; color: red;">The email is being sent.</div>
+            <button class="btn verify-btn" id="verify-code-btn">Verify Code</button>
+        </div>
+    </div>
+
+    <!-- JavaScript for form validation, password visibility, and email verification -->
     <script src="../static/js/register/register_util.js"></script>
     <script src="../static/js/register/register_with_google.js"></script>
 </body>

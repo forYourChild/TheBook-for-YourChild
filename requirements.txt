@@ -4,4 +4,6 @@ python-dotenv==1.0.1
 Flask-Session==0.8.0
 redis==5.0.8
 flask-bcrypt==1.0.1 
-psycopg2-binary==2.9.9
+psycopg2==2.9.9
+Flask-Mail==0.10.0
+Flask-WTF==1.2.1

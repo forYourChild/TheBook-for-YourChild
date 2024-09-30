@@ -1,7 +1,7 @@
 import uuid
-from flask import session, redirect, url_for
+from flask import session, url_for
 from modules.oauth import oauth
-from .. import auth_bp
+from views.auth import auth_bp
 
 @auth_bp.route('/google-login')
 def google_login():
