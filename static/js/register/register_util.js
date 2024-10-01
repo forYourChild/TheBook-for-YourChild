@@ -4,6 +4,11 @@ let isEmailValid = false;
 let isEmailVerified = false;
 let isPasswordValid = false;
 let isPasswordConfirmed = false;
+let resendCooldown = 180;
+let resendTimer = null;
+
+// Store the previously verified email for comparison
+let previousVerifiedEmail = '';
 
 // CSRF 토큰을 가져오기 위한 함수
 function getCSRFToken() {
@@ -53,6 +58,11 @@ emailInput.addEventListener('input', function () {
         sendVerificationCodeBtn.style.display = 'none';
         isEmailValid = false;
     }
+    // If the email has been changed after verification, force the user to verify again
+    if (isEmailVerified && email !== previousVerifiedEmail) {
+        isEmailVerified = false;  // Reset the verification status
+    }
+    
     updateRegisterButtonState();
 });
 
@@ -86,6 +96,28 @@ function startTimer(duration, display) {
     }, 1000);
 }
 
+// Function to reset the verification inputs and timer
+function resetVerificationPopup() {
+    // Reset all the code inputs
+    const codeInputs = document.querySelectorAll('.code-input');
+    codeInputs.forEach(input => {
+        input.value = ''; // Clear the input
+    });
+
+    // Reset the timer display
+    const timerDisplay = document.getElementById('timer');
+    timerDisplay.textContent = 'The email is being sent.'; // Clear the timer display
+
+    // Stop the timer
+    if (timerInterval) {
+        clearInterval(timerInterval);  // Clear any running timer
+        timerInterval = null;  // Reset the timer interval reference
+    }
+
+    // Hide the verification popup
+    verificationPopup.style.display = 'none';
+}
+
 // Event listener for showing the popup and starting the timer
 sendVerificationCodeBtn.addEventListener('click', function () {
     verificationPopup.style.display = 'flex';
@@ -96,14 +128,12 @@ sendVerificationCodeBtn.addEventListener('click', function () {
         clearInterval(timerInterval);  // 기존 타이머를 초기화
     }
     
-    isEmailVerified = true;
-    
     updateRegisterButtonState();
     SendVerificationCodetoEmail(email);
 });
 
 // Function to post email verification
-function SendVerificationCodetoEmail(email) {
+function SendVerificationCodetoEmail(email, isResend = false) {
     const postData = {
         method : 'POST',
         headers : {
@@ -112,46 +142,115 @@ function SendVerificationCodetoEmail(email) {
         },
         body : new URLSearchParams({
             'email' : email,
+            'resend': isResend 
         })
     };
     fetch('/auth/send_verification', postData)
-        .then(response => response.json())
-        .then(data => {
-            if (data.resultCode === 200) {
-                // 인증 코드가 성공적으로 전송된 경우
-                const startTime = data.start_time;
-                const expiresIn = data.expires_in;
-                
-                // 현재 시간을 기준으로 남은 시간을 계산
-                const currentTime = Math.floor(Date.now() / 1000); // 현재 클라이언트의 UNIX 타임스탬프
-                const remainingTime = expiresIn - (currentTime - startTime);
-                
-                // 타이머를 시작
-                const display = document.getElementById('timer');
-                startTimer(remainingTime, display);
-                // 타이머 시작 및 입력 필드로 이동
-            } else if (data.resultCode === 409) {
-                // 이미 가입된 이메일인 경우
-                verificationPopup.style.display = 'none';
-                alert(data.resultMsg);
-                // 가입된 이메일 메시지를 표시하고, 다른 이메일을 입력하게 함
-                document.getElementById('email-notification').innerText = 'The account is already subscribed.'
-            } else if (data.resultCode === 500) {
-                // 서버에서 오류가 발생한 경우
-                verificationPopup.style.display = 'none';
-                alert(data.resultMsg);
-                // 사용자가 재시도할 수 있게 안내
-            } else if (data.resultCode === 401) {
-                // 이메일 전송이 실패한 경우
-                verificationPopup.style.display = 'none';
-                alert(data.resultMsg);
-                // 사용자가 다시 시도할 수 있게 안내
-            }
+    .then(response => response.json())
+    .then(data => {
+        if (data.resultCode === 200) {
+            // 인증 코드가 성공적으로 전송된 경우
+            const startTime = data.start_time;
+            const expiresIn = data.expires_in;
+
+            // 현재 시간을 기준으로 남은 시간을 계산
+            const currentTime = Math.floor(Date.now() / 1000); // 현재 클라이언트의 UNIX 타임스탬프
+            const remainingTime = expiresIn - (currentTime - startTime);
+
+            // 타이머를 시작
+            const display = document.getElementById('timer');
+            startTimer(remainingTime, display);
+
+            previousVerifiedEmail = email;
+            sendVerificationCodeBtn.style.display = 'none'; // 버튼을 숨김
+
+        } else if (data.resultCode === 409) {
+            // 이미 가입된 이메일인 경우
+            verificationPopup.style.display = 'none';
+            alert(data.resultMsg);
+            
+        } else if (data.resultCode === 500) {
+            // 서버 오류가 발생한 경우
+            verificationPopup.style.display = 'none';
+            alert(data.resultMsg);
+            // 오류 메시지를 표시하고 재시도할 수 있게 유도
+
+        } else if (data.resultCode === 401) {
+            // 인증코드가 불일치일 경우
+            verificationPopup.style.display = 'none';
+            alert(data.resultMsg);
+            const codeInputs = document.querySelectorAll('.code-input');
+            codeInputs.forEach(input => {
+                input.value = ''; // Clear the input
+            });
+        } else if (data.resultCode === 410) {
+            // 인증 코드가 만료된 경우
+            alert('Your verification code has expired. Please request a new one.');
+            // 사용자에게 새로운 인증 코드를 요청하도록 안내
+        }
+        else if (data.resultCode === 429) {
+            verificationPopup.style.display = 'none';
+            alert(data.resultMsg);  // Show the message if they need to wait longer
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        verificationPopup.style.display = 'none';
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// Event listener for resending the verification code
+document.getElementById('resend-verification').addEventListener('click', function () {
+    const email = document.getElementById('email').value;
+    
+    fetch('/auth/send_verification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': getCSRFToken()
+        },
+        body: new URLSearchParams({
+            'email': email,
+            'resend': 'true'  // Indicates that this is a resend request
         })
-        .catch(error => {
-            console.error('Error:', error);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.resultCode === 200) {
+            alert(data.resultMsg);
+            handleResendButtonCooldown();  // Start the cooldown timer after a successful resend
+            // 타이머를 시작
+            const display = document.getElementById('timer');
+            startTimer(remainingTime, display);
+        } else if (data.resultCode === 429) {
+            alert(data.resultMsg);  // Show the message if they need to wait longer
+        } else {
             alert('An error occurred. Please try again.');
-        });
+        }
+    })
+    .catch(error => {
+        verificationPopup.style.display = 'none';
+        console.error('Error:', error);
+    });
+});
+
+// Function to handle the resend button state and cooldown
+function handleResendButtonCooldown() {
+    const resendBtn = document.getElementById('resend-verification-btn');
+    
+    let cooldownTime = resendCooldown;
+    
+    resendTimer = setInterval(function () {
+        cooldownTime--;
+        resendBtn.textContent = `Resend available in ${cooldownTime} seconds`;
+
+        if (cooldownTime <= 0) {
+            clearInterval(resendTimer);
+            resendBtn.disabled = false;
+            resendBtn.textContent = "Resend Verification Code";
+        }
+    }, 1000);
 }
 
 verifyCodeBtn.addEventListener('click', function () {
@@ -160,6 +259,7 @@ verifyCodeBtn.addEventListener('click', function () {
 
     postVerificationCode(email, code)
 });
+
 
 function postVerificationCode(email, code) {
     fetch('/auth/enter_code', {
@@ -173,19 +273,42 @@ function postVerificationCode(email, code) {
             'verification_code': code
         })
     })
-    .then(response => response.json())
+    .then(response => response.json())  // 응답을 JSON으로 파싱
     .then(data => {
         if (data.resultCode === 200) {
+            // 인증 성공
             isEmailVerified = true;
-            alert(data.resultMsg);
+            alert(data.resultMsg);  // 성공 메시지 출력
+            verificationPopup.style.display = 'none';  // 팝업 닫기
+            resetVerificationPopup();  // 인증 코드 입력 필드와 타이머 초기화
+
+        } else if (data.resultCode === 409) {
+            // 이미 가입된 이메일
             verificationPopup.style.display = 'none';
-        } else {
-            isEmailVerified = false;
-            alert(data.resultMsg);
+            alert(data.resultMsg);  // 중복된 이메일 경고 메시지
+
+        } else if (data.resultCode === 500) {
+            // 서버 오류
+            verificationPopup.style.display = 'none';
+            alert('An internal server error occurred. Please try again later.');
+            // 사용자에게 다시 시도할 수 있는 메시지 안내
+
+        } else if (data.resultCode === 401) {
+            // 인증 코드 불일치
+            alert(data.resultMsg);  // 인증 코드 불일치 경고
+            const codeInputs = document.querySelectorAll('.code-input');
+            codeInputs.forEach(input => {
+                input.value = '';  // 입력 필드 초기화
+            });
+
+        } else if (data.resultCode === 410) {
+            // 인증 코드 만료
+            alert('Your verification code has expired. Please request a new one.');
+            // 사용자에게 새 인증 코드 요청을 안내
         }
-        updateRegisterButtonState();
     })
     .catch(error => {
+        verificationPopup.style.display = 'none';
         console.error('Error:', error);
     });
 }
@@ -265,12 +388,13 @@ const inputs = document.querySelectorAll('.code-input');
 
 inputs.forEach((input, index) => {
     input.addEventListener('input', (e) => {
-        if (input.value.length === 1) {
-            if (index < inputs.length - 1) {
-                inputs[index + 1].focus();
+        const inputVal = input.value;
+        if (!/^\d$/.test(inputVal)) {
+            input.value = ''; // 숫자가 아닌 값이면 입력을 비움
+        } else {
+            if (input.value.length === 1 && index < inputs.length - 1) {
+                inputs[index + 1].focus(); // 다음 칸으로 포커스 이동
             }
-        } else if (input.value.length === 0 && index > 0) {
-            inputs[index - 1].focus();
         }
     });
 
@@ -347,5 +471,54 @@ document.querySelector('.register-btn').addEventListener('click', function (e) {
     // Prevent submission if any condition is not met
     if (hasError) {
         e.preventDefault(); // Stop form submission
+    }else{
+        sendSignUpPost();
     }
 });
+
+function sendSignUpPost() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+
+    fetch('/auth/signup', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': getCSRFToken()
+        },
+        body: new URLSearchParams({
+            'name': name,
+            'email': email,
+            'password': password,
+            'confirmPassword': confirmPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle response based on status code
+        if (data.resultCode === 200) {
+            // Successful signup
+            alert('Registration successful! Redirecting to login page...');
+            window.location.href = '/login';  // Redirect to login page
+        } else if (data.resultCode === 400) {
+            // Bad request (e.g., missing or invalid inputs)
+            alert(data.resultMsg || 'Invalid request. Please check your input.');
+        } else if (data.resultCode === 409) {
+            // Conflict (email already registered)
+            alert(data.resultMsg || 'Email is already registered.');
+        } else if (data.resultCode === 500) {
+            // Internal server error
+            alert('An internal server error occurred. Please try again later.');
+        } else {
+            // Catch-all for unexpected errors
+            alert('An unexpected error occurred. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('A network error occurred. Please try again later.');
+        verificationPopup.style.display = 'none';
+    });    
+};

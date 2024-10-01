@@ -27,59 +27,99 @@ def send_verification_email(to_email, verification_code):
     msg.html = render_template('verification_email.html', verification_code=verification_code)
     
     mail.send(msg)
-    response={'statusCode': '202', 'statusName': 'success'}
+    response={'statusCode': 202, 'statusName': 'success'}
     return response
 
 # 인증 코드 전송 및 저장
 @auth_bp.route('/send_verification', methods=['POST'])
 def send_verification():
     email = request.form['email']
+    is_resend = request.form.get('resend', 'false').lower() == 'true'  # If resend is true
 
     db = db_connect()
     cursor = db.cursor()
 
-    sql_query = f"SELECT 'email' from user WHERE 'email' = '{email}';"
-    cursor.execute(sql_query)
-    result = cursor.fetchone()
+    sql_query = "SELECT email FROM users WHERE email = %s;"
+    cursor.execute(sql_query, (email,))
+    result = cursor.fetchall()
+    cursor.close()
+    db.close()
 
-    if result: 
-        response={
+    if result:
+        response = {
             'resultCode': 409,
             'resultDesc': "Conflict",
             'resultMsg': "The account is already subscribed."
         }
         return jsonify(response), 409
-    else :
-        code = generate_verification_code()
-        
-        # Redis 객체 가져오기
-        redis_instance = current_app.config['SESSION_REDIS']
-        
-        # Redis에 저장 (email을 키로, code를 값으로) - 유효 기간 10분
-        try:
-            redis_instance.setex(f'verification_code:{email}', 600, code)
-            # 인증 코드 이메일로 전송
-            result = send_verification_email(email, code)
+
+    # Redis 객체 가져오기
+    redis_instance = current_app.config['SESSION_REDIS']
+    cooldown_key = f'resend_cooldown:{email}'
+
+    # Resend Cooldown Check (30-seconds cooldown)
+    cooldown_time = redis_instance.get(cooldown_key)
+    if cooldown_time:
+        remaining_time = int(cooldown_time.decode('utf-8')) - int(time.time())
+        if remaining_time > 0:
+            response = {
+                'resultCode': 429,
+                'resultDesc': "Too Many Requests",
+                'resultMsg': f"Please wait {remaining_time // 60}:{remaining_time % 60:02d} before resending the verification code."
+            }
+            return jsonify(response), 429
+
+    # If it's a resend request
+    if is_resend:
+        saved_code = redis_instance.get(f'verification_code:{email}')
+        if saved_code:
+            saved_code = saved_code.decode('utf-8')
             current_time = int(time.time())
+            redis_instance.setex(f'verification_code:{email}', 600, saved_code)  # Reset expiration
+
+            # Set cooldown for 3 minutes (180 seconds)
+            redis_instance.setex(cooldown_key, 30, current_time + 30)
             
-            if result['statusCode'] == '202':
+            response = {
+                'resultCode': 200,
+                'resultDesc': "Success",
+                'resultMsg': "Verification code resent successfully.",
+                'start_time': current_time,
+                'expires_in': 600  # Reset for another 10 minutes
+            }
+            send_verification_email(email, saved_code)
+            return jsonify(response), 200
+        else:
+            # 인증 코드가 만료된 경우, 새 코드를 생성
+            is_resend = False  # Treat it like a new request
+
+    # 새 코드 생성 또는 만료 시 새로운 인증 코드 생성
+    if not is_resend:
+        code = generate_verification_code()
+
+        try:
+            current_time = int(time.time())
+            redis_instance.setex(f'verification_code:{email}', 600, code)  # 저장, 유효 기간 10분
+            redis_instance.setex(cooldown_key, 30, current_time + 30)  # Set cooldown for resending for 30 seconds
+            result = send_verification_email(email, code)
+
+            if result['statusCode'] == 202:
                 response = {
                     'resultCode': 200,
                     'resultDesc': "Success",
                     'resultMsg': "Your mail has been sent.",
-                    'start_time': current_time,  # 인증 코드가 저장된 시간
-                    'expires_in': 600  # 만료 시간 (초)
+                    'start_time': current_time,
+                    'expires_in': 600  # 10 minutes expiry
                 }
                 return jsonify(response), 200
-            else: 
-                response={
+            else:
+                response = {
                     'resultCode': 401,
                     'resultDesc': "Unauthorized",
                     'resultMsg': "Failed to send mail."
                 }
                 return jsonify(response), 401
         except Exception as e:
-            # Redis 저장 중 오류 발생 시
             response = {
                 'resultCode': 500,
                 'resultDesc': "Internal Server Error",

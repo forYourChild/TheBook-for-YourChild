@@ -349,5 +349,18 @@ h2 {
     background-color: #5d4037;
 }
 
+.resend-btn {
+    display: inline-block;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 15px;
+    color: #8d6e63;
+    text-decoration: none;
+}
+
+.resend-btn:hover {
+    text-decoration: underline;
+}
+
 
 
