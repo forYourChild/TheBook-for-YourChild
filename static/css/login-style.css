@@ -5,6 +5,19 @@
     font-family: 'Arial', sans-serif;
 }
 
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #e0c4a8; /* 스크롤 트랙 배경 색상 */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #5d4037;
+}
+
 body {
     background-color: #f3e5ab; /* 따뜻한 배경색 */
     display: flex;

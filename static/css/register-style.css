@@ -75,6 +75,19 @@ h2 {
     flex-grow: 1;
 }
 
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #e0c4a8; /* 스크롤 트랙 배경 색상 */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #5d4037;
+}
+
 .input-group input::placeholder {
     color: #888; /* 플레이스홀더 색상 */
 }

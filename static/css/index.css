@@ -24,6 +24,36 @@ body {
     background-color: #5d4037;
 }
 
+/* Login, Logout, and Profile Button in the Top Right Corner */
+.top-right-buttons {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.login-btn-top-right,
+.logout-btn,
+.profile-btn {
+    background-color: #8d6e63;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-btn-top-right:hover,
+.logout-btn:hover,
+.profile-btn:hover {
+    background-color: #5d4037;
+}
+
+
 /* Hero Section with Logo */
 .hero {
     background-color: #fef4d1; /* 연한 베이지 배경 */
