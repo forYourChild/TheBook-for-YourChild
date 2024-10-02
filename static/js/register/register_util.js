@@ -10,6 +10,46 @@ let resendTimer = null;
 // Store the previously verified email for comparison
 let previousVerifiedEmail = '';
 
+// Toggle effect for email and password inputs
+
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const confrimPasswordInput = document.getElementById("confirm-password");
+
+nameInput.addEventListener("focus", function() {
+    document.getElementById("name-group").classList.add("active");
+});
+
+nameInput.addEventListener("blur", function() {
+    document.getElementById("name-group").classList.remove("active");
+});
+
+
+emailInput.addEventListener("focus", function() {
+    document.getElementById("email-group").classList.add("active");
+});
+
+emailInput.addEventListener("blur", function() {
+    document.getElementById("email-group").classList.remove("active");
+});
+
+passwordInput.addEventListener("focus", function() {
+    document.getElementById("password-group").classList.add("active");
+});
+
+passwordInput.addEventListener("blur", function() {
+    document.getElementById("password-group").classList.remove("active");
+});
+
+confrimPasswordInput.addEventListener("focus", function() {
+    document.getElementById("confirm-password-group").classList.add("active");
+});
+
+confrimPasswordInput.addEventListener("blur", function() {
+    document.getElementById("confirm-password-group").classList.remove("active");
+});
+
 // CSRF 토큰을 가져오기 위한 함수
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -32,7 +72,6 @@ function updateRegisterButtonState() {
 updateRegisterButtonState()
 
 // Name input validation
-const nameInput = document.getElementById('name');
 nameInput.addEventListener('input', function () {
     if (this.value.trim() !== '') {
         isNameValid = true;
@@ -44,7 +83,6 @@ nameInput.addEventListener('input', function () {
 });
 
 // Add an event listener for email input to show the "Send Verification Code" button
-const emailInput = document.getElementById('email');
 emailInput.addEventListener('input', function () {
     const email = this.value;
     const sendVerificationCodeBtn = document.getElementById('send-verification-code-btn');

@@ -1,5 +1,5 @@
 from flask_mail import Message
-from flask import current_app, request, render_template, jsonify
+from flask import current_app, request, render_template, jsonify, session
 from modules.db_connect import db_connect
 from views.auth import auth_bp
 import random
@@ -7,8 +7,8 @@ import time
 
 # 인증 코드 생성 함수
 def generate_verification_code():
-  otp = str(random.randint(100000, 999999))
-  return otp
+    otp = str(random.randint(100000, 999999))
+    return otp
 
 # 이메일 전송 함수 (HTML 템플릿 사용)
 def send_verification_email(to_email, verification_code):
@@ -27,7 +27,7 @@ def send_verification_email(to_email, verification_code):
     msg.html = render_template('verification_email.html', verification_code=verification_code)
     
     mail.send(msg)
-    response={'statusCode': 202, 'statusName': 'success'}
+    response = {'statusCode': 202, 'statusName': 'success'}
     return response
 
 # 인증 코드 전송 및 저장
@@ -53,14 +53,12 @@ def send_verification():
         }
         return jsonify(response), 409
 
-    # Redis 객체 가져오기
-    redis_instance = current_app.config['SESSION_REDIS']
-    cooldown_key = f'resend_cooldown:{email}'
-
     # Resend Cooldown Check (30-seconds cooldown)
-    cooldown_time = redis_instance.get(cooldown_key)
+    cooldown_key = f'resend_cooldown:{email}'
+    cooldown_time = session.get(cooldown_key)
+
     if cooldown_time:
-        remaining_time = int(cooldown_time.decode('utf-8')) - int(time.time())
+        remaining_time = int(cooldown_time) - int(time.time())
         if remaining_time > 0:
             response = {
                 'resultCode': 429,
@@ -71,15 +69,14 @@ def send_verification():
 
     # If it's a resend request
     if is_resend:
-        saved_code = redis_instance.get(f'verification_code:{email}')
+        saved_code = session.get(f'verification_code:{email}')
         if saved_code:
-            saved_code = saved_code.decode('utf-8')
             current_time = int(time.time())
-            redis_instance.setex(f'verification_code:{email}', 600, saved_code)  # Reset expiration
+            session[f'verification_code:{email}'] = saved_code  # Reset expiration
 
             # Set cooldown for 3 minutes (180 seconds)
-            redis_instance.setex(cooldown_key, 30, current_time + 30)
-            
+            session[cooldown_key] = current_time + 30
+
             response = {
                 'resultCode': 200,
                 'resultDesc': "Success",
@@ -90,7 +87,6 @@ def send_verification():
             send_verification_email(email, saved_code)
             return jsonify(response), 200
         else:
-            # 인증 코드가 만료된 경우, 새 코드를 생성
             is_resend = False  # Treat it like a new request
 
     # 새 코드 생성 또는 만료 시 새로운 인증 코드 생성
@@ -99,8 +95,8 @@ def send_verification():
 
         try:
             current_time = int(time.time())
-            redis_instance.setex(f'verification_code:{email}', 600, code)  # 저장, 유효 기간 10분
-            redis_instance.setex(cooldown_key, 30, current_time + 30)  # Set cooldown for resending for 30 seconds
+            session[f'verification_code:{email}'] = code  # 인증 코드 저장
+            session[cooldown_key] = current_time + 30  # Set cooldown for resending for 30 seconds
             result = send_verification_email(email, code)
 
             if result['statusCode'] == 202:
@@ -128,26 +124,29 @@ def send_verification():
             return jsonify(response), 500
 
 # 인증 코드 입력 페이지
+# 인증 코드 입력 페이지
 @auth_bp.route('/enter_code', methods=['POST'])
 def check_verification_code():
     email = request.form['email']
     user_code = request.form['verification_code']
 
-    # Redis에서 저장된 인증 코드 가져오기
-    redis_instance = current_app.config['SESSION_REDIS']
-    saved_code = redis_instance.get(f'verification_code:{email}')
+    # 세션에서 저장된 인증 코드 가져오기
+    saved_code = session.get(f'verification_code:{email}')
     
     if saved_code:
-        # Redis에서 가져온 데이터는 bytes이므로, 이를 UTF-8로 디코딩합니다.
-        saved_code = saved_code.decode('utf-8')
-        
         # 인증 코드가 맞는지 확인
         if saved_code == user_code:
-            # 인증 성공
+            # 인증 성공 후 세션에서 관련 정보 제거
+            session.pop(f'verification_code:{email}', None)
+            session.pop(f'resend_cooldown:{email}', None)
+
+            # 회원가입 처리 이후 세션에 저장된 이메일 정보 삭제 (필요한 경우)
+            session.pop('email', None)
+
             response = {
                 'resultCode': 200,
                 'resultDesc': "Success",
-                'resultMsg': "Verification successful."
+                'resultMsg': "Verification successful and session data cleared."
             }
             return jsonify(response), 200
         else:
@@ -159,7 +158,7 @@ def check_verification_code():
             }
             return jsonify(response), 401
     else:
-        # 인증 코드가 없거나 만료된 경우 (Redis에 없는 경우)
+        # 인증 코드가 없거나 만료된 경우 (세션에 없는 경우)
         response = {
             'resultCode': 410,
             'resultDesc': "Gone",

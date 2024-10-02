@@ -1,7 +1,8 @@
 from flask import request, jsonify, current_app
-import bcrypt
 from modules.db_connect import db_connect
 from views.auth import auth_bp
+import bcrypt
+import uuid
 
 # Function to check if the email is already registered
 def is_email_registered(email, cursor):
@@ -13,13 +14,12 @@ def is_email_registered(email, cursor):
 def hash_password(password):
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed
+    return hashed.decode('utf-8')
 
 # Signup route
 @auth_bp.route('/signup', methods=['POST'])
 def sign_up():
     data = request.form
-    print(data)
 
     # Retrieve input values
     name = data.get('name')
@@ -64,15 +64,16 @@ def sign_up():
                 'resultMsg': "This email is already registered."
             }), 409
 
+        user_key = str(uuid.uuid4())
         # Hash the password
         hashed_password = hash_password(password)
 
         # Insert the user into the database
         query = """
-            INSERT INTO users (name, email, password)
-            VALUES (%s, %s, %s)
+            INSERT INTO users (id, name, email, password)
+            VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(query, (name, email, hashed_password))
+        cursor.execute(query, (user_key, name, email, hashed_password))
         db.commit()
 
         return jsonify({

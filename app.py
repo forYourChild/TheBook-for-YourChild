@@ -49,7 +49,7 @@ else:
     app.config['SESSION_COOKIE_SECURE'] = True  # 프로덕션 환경에서는 HTTPS 사용
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Cross-site 요청 방지
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)  # 세션 만료 시간을 4시간으로 설정
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=15)  # 세션 만료 시간을 15일로 설정
 
 # 세션 초기화
 Session(app)
