@@ -3,7 +3,7 @@ function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
 
-document.getElementById('logout-btn').addEventListener('click', function() {
+document.getElementById('sidebar-logout-btn').addEventListener('click', function() {
     fetch('/auth/logout', {
         method: 'POST',
         headers: {

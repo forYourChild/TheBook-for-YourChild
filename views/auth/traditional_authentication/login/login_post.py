@@ -39,7 +39,7 @@ def login():
             }), 401
     else:
         return jsonify({
-            'resultCode': 404,
-            'resultDesc': 'Not Found',
-            'resultMsg': 'User not found'
-        }), 404
+                'resultCode': 401,
+                'resultDesc': 'Unauthorized',
+                'resultMsg': 'Invalid email or password'
+            }), 401
