@@ -1,10 +1,8 @@
 from flask import request, jsonify, current_app, session
 from modules.db_connect import db_connect
-from views.auth import auth_bp
+from . import setting_bp
 import bcrypt
-import uuid
 
-# Function to check if the email is already registered
 def is_email_registered(email, cursor):
     query = "SELECT email FROM users WHERE email = %s;"
     cursor.execute(query, (email,))
@@ -16,26 +14,23 @@ def hash_password(password):
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
 
-# Signup route
-@auth_bp.route('/signup', methods=['POST'])
-def sign_up():
+@setting_bp.route('/resetpassword', methods=['POST'])
+def reset_password() :
     data = request.form
-    
-    if 'email_verified' not in session:
+
+    if 'email_verified' not in session :
         return jsonify({
             'resultCode': 401,
             'resultDesc': "Unauthorized.",
             'resultMsg': "Email is not verified"
         }), 400
 
-    # Retrieve input values
-    name = data.get('name')
     email = data.get('email')
     password = data.get('password')
     confirm_password = data.get('confirmPassword')
 
     # Ensure required fields are present
-    if not all([name, email, password, confirm_password]):
+    if not all([email, password, confirm_password]):
         return jsonify({
             'resultCode': 400,
             'resultDesc': "Bad Request",
@@ -57,33 +52,30 @@ def sign_up():
             'resultDesc': "Bad Request",
             'resultMsg': "Password must be at least 10 characters and include a special character."
         }), 400
-
+    
     # Connect to the database
     db = db_connect()
     cursor = db.cursor()
 
-    try:
+    try : 
         # Check if the email is already registered
-        if is_email_registered(email, cursor):
+        if not is_email_registered(email, cursor):
             return jsonify({
                 'resultCode': 409,
                 'resultDesc': "Conflict",
-                'resultMsg': "This email is already registered."
+                'resultMsg': "This email isn't registered."
             }), 409
-
-        user_key = str(uuid.uuid4())
-        # Hash the password
+        
         hashed_password = hash_password(password)
 
-        # Insert the user into the database
         query = """
-            INSERT INTO users (id, name, email, password)
-            VALUES (%s, %s, %s, %s)
+            UPDATE users SET password=%s where email=%s
         """
-        cursor.execute(query, (user_key, name, email, hashed_password))
+
+        cursor.execute(query, (hashed_password, email))
         db.commit()
         session.pop('email_verified', None)
-        
+
         return jsonify({
             'resultCode': 200,
             'resultDesc': "Success",
@@ -97,7 +89,7 @@ def sign_up():
             'resultDesc': "Internal Server Error",
             'resultMsg': "An error occurred on the server."
         }), 500
-
+    
     finally:
         cursor.close()
         db.close()

@@ -4,11 +4,9 @@ let isEmailValid = false;
 let isEmailVerified = false;
 let isPasswordValid = false;
 let isPasswordConfirmed = false;
-let resendCooldown = 180;
-let resendTimer = null;
-
-// Store the previously verified email for comparison
 let previousVerifiedEmail = '';
+let resendCooldown = 15;
+let resendTimer = null;
 
 // Toggle effect for email and password inputs
 
@@ -69,7 +67,7 @@ function updateRegisterButtonState() {
         registerBtn.classList.add('disabled');
     }
 }
-updateRegisterButtonState()
+window.onload = updateRegisterButtonState;
 
 // Name input validation
 nameInput.addEventListener('input', function () {
@@ -198,6 +196,7 @@ function SendVerificationCodetoEmail(email, isResend = false) {
             // 타이머를 시작
             const display = document.getElementById('timer');
             startTimer(remainingTime, display);
+            handleResendButtonCooldown()
 
             previousVerifiedEmail = email;
             sendVerificationCodeBtn.style.display = 'none'; // 버튼을 숨김
@@ -228,7 +227,7 @@ function SendVerificationCodetoEmail(email, isResend = false) {
         }
         else if (data.resultCode === 429) {
             verificationPopup.style.display = 'none';
-            alert(data.resultMsg);  // Show the message if they need to wait longer
+            alert('An error occurred. Please try again.');  // Show the message if they need to wait longer
         }
     })
     .catch(error => {
@@ -260,9 +259,10 @@ document.getElementById('resend-verification').addEventListener('click', functio
             handleResendButtonCooldown();  // Start the cooldown timer after a successful resend
             // 타이머를 시작
             const display = document.getElementById('timer');
+            const remainingTime = expiresIn - (currentTime - startTime);
             startTimer(remainingTime, display);
         } else if (data.resultCode === 429) {
-            alert(data.resultMsg);  // Show the message if they need to wait longer
+            alert('An error occurred. Please try again.');  // Show the message if they need to wait longer
         } else {
             alert('An error occurred. Please try again.');
         }
@@ -273,22 +273,27 @@ document.getElementById('resend-verification').addEventListener('click', functio
     });
 });
 
-// Function to handle the resend button state and cooldown
 function handleResendButtonCooldown() {
-    const resendBtn = document.getElementById('resend-verification-btn');
-    
-    let cooldownTime = resendCooldown;
-    
+    const resendBtn = document.getElementById('resend-verification');  // "Resend Verification Code" 버튼
+    let cooldownTime = resendCooldown;  // 180초(3분) 쿨다운
+
+    // 버튼 비활성화 및 쿨다운 시작
+    resendBtn.disabled = true;
+    resendBtn.textContent = `Resend available in ${cooldownTime} seconds`;
+
     resendTimer = setInterval(function () {
         cooldownTime--;
+
+        // 남은 시간을 화면에 표시
         resendBtn.textContent = `Resend available in ${cooldownTime} seconds`;
 
         if (cooldownTime <= 0) {
+            // 쿨다운이 끝나면 타이머 종료, 버튼 활성화 및 텍스트 초기화
             clearInterval(resendTimer);
             resendBtn.disabled = false;
             resendBtn.textContent = "Resend Verification Code";
         }
-    }, 1000);
+    }, 1000);  // 1초마다 타이머 업데이트
 }
 
 verifyCodeBtn.addEventListener('click', function () {

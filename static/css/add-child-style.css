@@ -1,0 +1,215 @@
+/* Global settings */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Make sure the body and html can expand based on content */
+html, body {
+    height: auto;
+    background-color: #f3e5ab; /* 부드러운 베이지 배경 */
+    overflow-y: auto; /* 페이지에 스크롤을 허용 */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* 페이지 상단에 컨텐츠 배치 */
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #e0c4a8; /* 스크롤 트랙 배경 색상 */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #5d4037;
+}
+
+.register-child-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    height: auto; /* 내용에 맞게 높이 자동 조절 */
+    min-height: 100vh; /* 페이지 높이가 짧을 때는 전체 높이를 유지 */
+}
+
+.register-child-box {
+    background-color: #fff8e1; /* 카드 스타일 배경 */
+    padding: 40px 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+h2 {
+    font-size: 2rem;
+    color: #8d6e63;
+    margin-bottom: 20px;
+}
+
+/* Input Group Styling */
+.input-group {
+    display: flex;
+    align-items: center;
+    background-color: #f9ecd0; /* 기본 배경색 */
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent; /* 기본 상태에서 투명한 테두리 */
+}
+
+.input-group.active {
+    background-color: #f4d4a4; /* 포커스된 상태의 배경색 */
+    border-color: #8d6e63; /* 포커스된 상태의 테두리 */
+}
+
+.input-group .material-symbols-outlined {
+    font-size: 24px;
+    color: #888; /* 기본 아이콘 색상 */
+    margin-right: 10px;
+    transition: color 0.3s ease;
+}
+
+.input-group.active .material-symbols-outlined {
+    color: #5d4037; /* 포커스 상태에서 아이콘 색상 변경 */
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+    background: none;
+    border: none;
+    outline: none;
+    color: #5d4037; /* 텍스트 색상 */
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+/* Image Preview Container */
+.image-preview-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Image Preview Styling */
+.image-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #8d6e63;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+
+.image-preview span {
+    font-size: 0.9rem;
+    color: #8d6e63;
+}
+
+.image-preview.dragging {
+    background-color: rgba(141, 110, 99, 0.1);
+    border-color: #5d4037;
+}
+
+#tag-input {
+    position: relative;
+}
+
+#tag-input input {
+    padding-right: 50px;
+}
+
+#tag-container {
+    margin-top: -10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tag {
+    background-color: #8d6e63;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tag .remove-tag {
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-weight: bold;
+}
+
+/* Image Preview */
+.image-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #8d6e63;
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.image-preview.dragging {
+    background-color: rgba(141, 110, 99, 0.1);
+    border-color: #5d4037; /* 강조된 상태일 때 테두리 색 변경 */
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 150px;
+}
+
+.image-preview span {
+    font-size: 0.9rem;
+    color: #8d6e63;
+}
+
+/* Button Styling */
+.btn {
+    background-color: #8d6e63;
+    color: white;
+    padding: 12px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.btn:hover {
+    background-color: #5d4037;
+}

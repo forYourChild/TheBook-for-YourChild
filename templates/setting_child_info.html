@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Storybook - The Book For Your Child</title>
-    <link rel="stylesheet" href="../static/css/index.css">
+    <title>Your Children - The Book For Your Child</title>
+    <link rel="stylesheet" href="../static/css/setting-child-info.css">
+    <!-- Google Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
     <!-- Navigation Buttons in the Top Right Corner -->
     <div class="top-right-buttons">
-        <!-- Login Button -->
-        <a href="/login" id="login-btn" class="login-btn-top-right">Login</a>
         <!-- Profile Icon: Appears when user is logged in -->
-        <span class="material-icons" id="profile-icon" style="display: none; cursor: pointer;">account_circle</span>
+        <span class="material-icons" id="profile-icon" style="cursor: pointer;">account_circle</span>
     </div>
 
     <!-- Sidebar for User Info -->
@@ -42,28 +41,20 @@
     <!-- Header Section with Logo -->
     <header class="hero">
         <div class="hero-content">
-            <img src="../static/images/logo.png" alt="Storybook Logo" class="logo">
-            <h1>The Book for Your Child</h1>
-            <p>Create a book where your child becomes the hero of their own adventure</p>
-            <a href="/login?value=createpage" class="btn create-btn" id="create-btn">Start Creating a Storybook</a>
+            <a href="/"><img src="../static/images/logo.png" alt="Storybook Logo" class="logo"></a>
+            <h1>Your Children</h1>
         </div>
     </header>
 
-    <!-- How It Works Section -->   
-    <section id="how-it-works" class="section">
-        <h2>How It Works</h2>
-        <div class="steps">
-            <div class="step">
-                <h3>Step 1</h3>
-                <p>Enter your child's details.</p>
-            </div>
-            <div class="step">
-                <h3>Step 2</h3>
-                <p>Select the lessons you want your child to learn.</p>
-            </div>
-            <div class="step">
-                <h3>Step 3</h3>
-                <p>Choose a story and let your child explore their journey.</p>
+    <!-- Child List Section -->
+    <section id="child-list-section" class="section">
+        <div class="child-list-container">
+            <div id="child-list">
+                <!-- If children are available, their details will be shown here. If not, the Add Child button will be displayed. -->
+                <div id="no-children-message" class="no-children-message">
+                    <p>You haven't registered any children yet.</p>
+                    <a href="/setting/stchildadd" class="btn add-child-btn">Add Child Info</a>
+                </div>
             </div>
         </div>
     </section>
@@ -73,9 +64,8 @@
         <p>&copy; 2024 The Book For Your Child. All Rights Reserved.</p>
     </footer>
 
-    <!-- JavaScript for sidebar toggle and fetch -->
-    <script src="../static/js/onboarding/sidebar.js"></script>
-    <script src="../static/js/onboarding/login_status.js"></script>
+    <!-- JavaScript for sidebar toggle and dynamic child list rendering -->
+    <script src="../static/js/setting/setting-child-util.js "></script>
     <script src="../static/js/onboarding/logout_post.js"></script>
 </body>
 </html>

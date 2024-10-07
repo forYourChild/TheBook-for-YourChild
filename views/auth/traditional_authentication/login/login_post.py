@@ -18,11 +18,9 @@ def login():
 
     cursor.execute("SELECT id, password FROM users WHERE email = %s", (email,))
     user = cursor.fetchone()
-    print('user',user)
 
     if user:
         user_id, stored_password = user
-        print(stored_password)
         if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
             # Store user ID or email in the session to keep them logged in
             session['user_id'] = user_id
