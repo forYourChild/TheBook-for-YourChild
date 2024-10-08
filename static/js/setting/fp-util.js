@@ -17,13 +17,13 @@ function getCSRFToken() {
 
 // 이메일 검증 및 인증 코드 발송
 const emailInput = document.getElementById("email");
-const sendVerificationCodeBtn = document.getElementById("send-verification-code-btn");4
-const emailInputBox = document.getElementById('email-input-box')
+const sendVerificationCodeBtn = document.getElementById("send-verification-code-btn");
+const emailInputBox = document.getElementById('email-input-box');
 const verificationPopup = document.getElementById("verification-popup");
 const resetPasswordBox = document.getElementById("reset-password-box");
 const togglePassword = document.getElementById('toggle-password');
 const toggleConfirmPassword = document.getElementById('toggle-confirm-password');
-const resetPasswordBtn = document.getElementById('reset-password-btn')
+const resetPasswordBtn = document.getElementById('reset-password-btn');
 
 togglePassword.addEventListener('click', function() {
     const passwordField = document.getElementById('password');
@@ -39,6 +39,7 @@ toggleConfirmPassword.addEventListener('click', function() {
     this.textContent = type === 'password' ? 'visibility' : 'visibility_off';
 });
 
+// 이메일 입력 시 유효성 검사
 emailInput.addEventListener('input', function () {
     const email = this.value;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,10 +51,9 @@ emailInput.addEventListener('input', function () {
         sendVerificationCodeBtn.style.display = 'none';
         isEmailValid = false;
     }
-    
-    // 이메일이 변경된 경우, 재전송 상태로 전환
+
     if (email !== previousVerifiedEmail) {
-        isResend = false;  // 이메일이 변경되면 재전송 여부를 초기화
+        isResend = false;
     }
 });
 
@@ -61,11 +61,7 @@ emailInput.addEventListener('input', function () {
 sendVerificationCodeBtn.addEventListener('click', function () {
     const email = emailInput.value;
     verificationPopup.style.display = 'flex';
-
-    // 재전송 여부 설정
     isResend = email === previousVerifiedEmail;
-
-    // 서버로 인증 코드 요청
     sendVerificationCodeToEmail(email, isResend);
 });
 
@@ -85,9 +81,16 @@ function sendVerificationCodeToEmail(email, isResend = false) {
     .then(response => response.json())
     .then(data => {
         if (data.resultCode === 200) {
-            previousVerifiedEmail = email;  // 성공적으로 인증 코드를 보냈을 때, 이전 이메일로 설정
-            startTimer(600, document.getElementById('timer'));  // 타이머 시작
-            handleResendButtonCooldown();  // 재전송 버튼 쿨다운 처리
+            previousVerifiedEmail = email;
+            const currentTime = Math.floor(Date.now() / 1000);  // 현재 시간 (유닉스 타임스탬프)
+            const expiresIn = data.expires_in - currentTime;  // 서버에서 받은 만료 시간에서 현재 시간을 뺀 값으로 남은 시간 계산
+
+            if (expiresIn > 0) {
+                startTimer(expiresIn, document.getElementById('timer'));  // 타이머 시작
+                handleResendButtonCooldown();  // 재전송 버튼 쿨다운 처리
+            } else {
+                alert('The verification code has already expired.');
+            }
         } else {
             codeInputs.forEach(input => {
                 input.value = '';  // 입력 필드 초기화
@@ -101,6 +104,7 @@ function sendVerificationCodeToEmail(email, isResend = false) {
     });
 }
 
+// 인증 코드 입력 필드 및 포커스 처리
 const inputs = document.querySelectorAll('.code-input');
 inputs.forEach((input, index) => {
     input.addEventListener('input', (e) => {
@@ -120,26 +124,24 @@ inputs.forEach((input, index) => {
         }
     });
 
-    // Handle paste event to distribute pasted content across inputs
+    // 붙여넣기 이벤트 처리
     input.addEventListener('paste', (e) => {
-        e.preventDefault(); // 기본 동작 방지
-        const pasteData = e.clipboardData.getData('text').trim(); // 클립보드에서 텍스트 데이터 가져오기
-        const pasteArray = pasteData.split(''); // 각 글자를 배열로 분리
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text').trim();
+        const pasteArray = pasteData.split('');
 
-        // 붙여넣은 데이터를 현재 인덱스부터 나머지 칸에 순차적으로 채움
         pasteArray.forEach((char, i) => {
             if (index + i < inputs.length) {
-                inputs[index + i].value = char; // 칸에 글자를 채움
+                inputs[index + i].value = char;
             }
         });
 
-        // 마지막으로 채워진 칸으로 포커스 이동
         const lastIndex = Math.min(index + pasteArray.length - 1, inputs.length - 1);
         inputs[lastIndex].focus();
     });
 });
 
-// 인증 코드 입력 후 검증
+// 인증 코드 검증 후 상태 전환
 document.getElementById('verify-code-btn').addEventListener('click', function () {
     const email = emailInput.value;
     const code = Array.from(document.querySelectorAll('.code-input')).map(input => input.value).join('');
@@ -153,8 +155,7 @@ document.getElementById('verify-code-btn').addEventListener('click', function ()
         body: new URLSearchParams({
             'email': email,
             'verification_code': code,
-            'action_type' : 'reset_password'
-            
+            'action_type': 'reset_password'
         })
     })
     .then(response => response.json())
@@ -177,12 +178,12 @@ function startTimer(duration, display) {
     let timer = duration, minutes, seconds;
     
     // 기존 타이머가 실행 중이면 중지
-    clearInterval(timerInterval);  
-    
+    clearInterval(timerInterval);
+
     // 새로운 타이머 시작
     timerInterval = setInterval(function () {
-        minutes = parseInt(timer / 60, 10);
-        seconds = parseInt(timer % 60, 10);
+        minutes = Math.floor(timer / 60);
+        seconds = timer % 60;
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
         seconds = seconds < 10 ? "0" + seconds : seconds;
@@ -201,7 +202,7 @@ function handleResendButtonCooldown() {
     const resendBtn = document.getElementById('resend-verification');
     let cooldownTime = resendCooldown;
 
-    resendBtn.disabled = true;  // 재전송 버튼 비활성화
+    resendBtn.disabled = true;
     resendTimer = setInterval(function () {
         cooldownTime--;
         resendBtn.textContent = `Resend available in ${cooldownTime} seconds`;
@@ -217,10 +218,10 @@ function handleResendButtonCooldown() {
 // 인증 코드 재전송 버튼 클릭 이벤트
 document.getElementById('resend-verification').addEventListener('click', function () {
     const email = emailInput.value;
-    sendVerificationCodeToEmail(email, true);  // 재전송 요청
+    sendVerificationCodeToEmail(email, true);
 });
 
-// Password validation (length, special character, and match check)
+// 비밀번호 유효성 검사 및 확인
 document.getElementById('password').addEventListener('input', validatePassword);
 document.getElementById('confirm-password').addEventListener('input', validatePassword);
 
@@ -231,7 +232,7 @@ function validatePassword() {
     const specialCharCheck = document.getElementById('special-char');
     const passwordMatchCheck = document.getElementById('password-match');
 
-    // Check for length
+    // 비밀번호 길이 확인
     if (password.length >= 10) {
         minLengthCheck.classList.add('valid');
         minLengthCheck.classList.remove('invalid');
@@ -244,7 +245,7 @@ function validatePassword() {
         isPasswordValid = false;
     }
 
-    // Check for special character
+    // 특수 문자 확인
     const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
     if (specialCharRegex.test(password)) {
         specialCharCheck.classList.add('valid');
@@ -258,7 +259,7 @@ function validatePassword() {
         isPasswordValid = false;
     }
 
-    // Check if passwords match
+    // 비밀번호 일치 확인
     if (password === confirmPassword && confirmPassword !== '') {
         passwordMatchCheck.classList.add('valid');
         passwordMatchCheck.classList.remove('invalid');
@@ -274,47 +275,27 @@ function validatePassword() {
     updateChangePasswordButtonState();
 }
 
-// Function to update the state of the ChangePassword button
+// 비밀번호 변경 버튼 상태 업데이트
 function updateChangePasswordButtonState() {
     if (isPasswordValid && isPasswordConfirmed) {
         resetPasswordBtn.disabled = false;
         resetPasswordBtn.classList.remove('disabled');
     } else {
-        resetPasswordBtn.disabled = false;  // Make sure the button is clickable, but will show errors
+        resetPasswordBtn.disabled = false;
         resetPasswordBtn.classList.add('disabled');
     }
 }
-window.onload = updateChangePasswordButtonState;
 
 // 비밀번호 재설정 요청
 resetPasswordBtn.addEventListener('click', function (e) {
-    // Check Password Field
-    if (!isPasswordValid) {
-        document.getElementById('password-group').style.border = '2px solid red';
-        hasError = true;
+    if (!isPasswordValid || !isPasswordConfirmed) {
+        e.preventDefault(); // 조건이 충족되지 않으면 제출을 막음
     } else {
-        document.getElementById('password-group').style.border = '';
-        hasError = false;
-    }
-
-    // Check Confirm Password Field
-    if (!isPasswordConfirmed) {
-        document.getElementById('confirm-password-group').style.border = '2px solid red';
-        hasError = true;
-    } else {
-        document.getElementById('confirm-password-group').style.border = '';
-        hasError = false;
-    }
-
-    // Prevent submission if any condition is not met
-    if (hasError) {
-        e.preventDefault(); // Stop form submission
-    }else{
-        sendChagePasswordPost();
+        sendChangePasswordPost();
     }
 });
 
-function sendChagePasswordPost() {
+function sendChangePasswordPost() {
     const email = emailInput.value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
