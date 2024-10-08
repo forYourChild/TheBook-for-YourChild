@@ -5,6 +5,8 @@
     const loginBtn = document.getElementById('login-btn');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
+
+    const next = new URLSearchParams(window.location.search).get("next");
     const value = new URLSearchParams(window.location.search).get("value");
 
     function getCSRFToken() {
@@ -83,10 +85,13 @@
         .then(response => response.json())
         .then(data => {
             if (data.resultCode === 200) {
-                if (value=='createpage') {
-                    window.location.href = '/child';
-                }else {
-                    window.location.href = '/';
+                // next 파라미터가 있으면 해당 URL로 리디렉션, 없으면 value 처리
+                if (next) {
+                    window.location.href = next;  // next 파라미터가 있는 경우 해당 URL로 리디렉션
+                } else if (value === 'createpage') {
+                    window.location.href = '/childlist';  // value가 'createpage'이면 해당 페이지로 이동
+                } else {
+                    window.location.href = '/';  // 기본적으로 홈으로 리디렉션
                 }
             } else {
                 alert(data.resultMsg || 'Login failed. Please try again.');
