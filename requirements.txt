@@ -7,3 +7,7 @@ flask-bcrypt==1.0.1
 psycopg2==2.9.9
 Flask-Mail==0.10.0
 Flask-WTF==1.2.1
+boto3==1.35.35
+opencv-python==4.10.0.84
+pillow==10.4.0
+mediapipe==0.10.14

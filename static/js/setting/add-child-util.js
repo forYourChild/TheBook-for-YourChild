@@ -1,11 +1,70 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const tagInput = document.getElementById('favorite-tags');
+    const registerChildBtn = document.getElementById('register-child-btn');
+    const childName = document.getElementById('child-name');
+    const childGender = document.getElementById('child-gender');
+    const favoriteTags = document.getElementById('favorite-tags');
     const tagContainer = document.getElementById('tag-container');
+    const childCharacteristics = document.getElementById('child-characteristics');
+    const childImageInput = document.getElementById('child-image');
+    const imagePreview = document.getElementById('image-preview');
+    const imagePreviewImg = document.getElementById('image-preview-img');
+    const imagePreviewText = document.getElementById('image-preview-text');
+
+    let isNameValid = false;
+    let isGenderValid = false;
+    let isTagsValid = false;
+    let isCharacteristicsValid = false;
+    let isImageValid = false;
     let tags = [];
+    let isSubmitAttempted = false;
 
-    inputEvent()
+    // Add input event listeners for real-time validation
+    childName.addEventListener('input', function () {
+        isNameValid = childName.value.trim() !== '';
+        updateSubmitButtonState();  // 실시간으로 버튼 활성화 여부 결정
+    });
 
-    // Function to render tags
+    childGender.addEventListener('change', function () {
+        isGenderValid = childGender.value !== '';
+        updateSubmitButtonState();
+    });
+
+    favoriteTags.addEventListener('input', function () {
+        isTagsValid = tags.length > 0;
+        updateSubmitButtonState();
+    });
+
+    childCharacteristics.addEventListener('input', function () {
+        isCharacteristicsValid = childCharacteristics.value.trim() !== '';
+        updateSubmitButtonState();
+    });
+
+    childImageInput.addEventListener('change', handleImageUpload);  // 이미지 업로드 이벤트 추가
+
+    // 이미지 파일 유효성 검사 및 미리보기
+    function handleImageUpload() {
+        const file = childImageInput.files[0];
+        if (file && isImageFile(file)) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imagePreviewImg.src = e.target.result;
+                imagePreviewImg.style.display = 'block';
+                imagePreviewText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            isImageValid = true;  // 이미지가 유효하면 true로 설정
+        } else {
+            imagePreviewImg.style.display = 'none';
+            imagePreviewText.style.display = 'block';
+            isImageValid = false;  // 이미지가 유효하지 않으면 false로 설정
+        }
+        if (isSubmitAttempted) {
+            updateFieldState(childImageInput, isImageValid);
+        }
+        updateSubmitButtonState();
+    }
+
+    // 태그 렌더링 함수
     function renderTags() {
         tagContainer.innerHTML = '';
         tags.forEach((tag, index) => {
@@ -15,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tagContainer.appendChild(tagElement);
         });
 
-        // Attach event listeners to remove buttons
+        // 태그 삭제 버튼 이벤트
         document.querySelectorAll('.remove-tag').forEach(button => {
             button.addEventListener('click', function () {
                 const index = this.getAttribute('data-index');
@@ -23,133 +82,102 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderTags();
             });
         });
+
+        isTagsValid = tags.length > 0;
     }
 
-    // Add tag on enter or space, only if it starts with '#'
-    tagInput.addEventListener('keypress', function (e) {
+    // 태그 입력 필드 이벤트
+    favoriteTags.addEventListener('keypress', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            const tag = tagInput.value.trim();
+            const tag = favoriteTags.value.trim();
             if (tag.startsWith('#') && !tags.includes(tag)) {
                 tags.push(tag);
                 renderTags();
             }
-            tagInput.value = '';
+            favoriteTags.value = '';
         }
     });
 
-    // Image preview functionality
-    const childImageInput = document.getElementById('child-image');
-    const imagePreview = document.getElementById('image-preview');
-    const imagePreviewImg = document.getElementById('image-preview-img');
-    const imagePreviewText = document.getElementById('image-preview-text');
-
-    // Function to load and preview image
-    function loadPreview(file) {
-        const reader = new FileReader();
-        imagePreviewText.style.display = 'none';
-        imagePreviewImg.style.display = 'block';
-
-        reader.addEventListener('load', function () {
-            imagePreviewImg.setAttribute('src', this.result);
-        });
-
-        reader.readAsDataURL(file);
+    // 파일이 이미지인지 검사하는 함수
+    function isImageFile(file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        return allowedTypes.includes(file.type);
     }
 
-    // Handle file input change event
-    childImageInput.addEventListener('change', function () {
-        const file = this.files[0];
-        if (file) {
-            loadPreview(file);
+    // 필드가 유효한지 설정하는 헬퍼 함수
+    function updateFieldState(element, isValid) {
+        if (isSubmitAttempted && !isValid) {
+            element.closest('.input-group').style.border = '2px solid red';
         } else {
-            imagePreviewText.style.display = 'block';
-            imagePreviewImg.style.display = 'none';
-            imagePreviewImg.setAttribute('src', '');
+            element.closest('.input-group').style.border = '';
+        }
+    }
+
+    // 모든 필드가 유효한지 확인 후 버튼 활성화 여부 결정
+    function updateSubmitButtonState() {
+        const allValid = isNameValid && isGenderValid && isTagsValid && isCharacteristicsValid && isImageValid;
+        registerChildBtn.disabled = !allValid;
+    }
+
+    // 버튼 클릭 시 모든 필드 검증 및 POST 요청
+    registerChildBtn.addEventListener('click', function () {
+        isSubmitAttempted = true;
+        validateAllFields();
+
+        if (isNameValid && isGenderValid && isTagsValid && isCharacteristicsValid && isImageValid) {
+            sendChildInfoPost();
         }
     });
 
-    // Click to open file selector
-    imagePreview.addEventListener('click', function () {
-        childImageInput.click();
-    });
+    // 모든 필드를 검사하는 함수
+    function validateAllFields() {
+        isNameValid = childName.value.trim() !== '';
+        isGenderValid = childGender.value !== '';
+        isTagsValid = tags.length > 0;
+        isCharacteristicsValid = childCharacteristics.value.trim() !== '';
+        isImageValid = childImageInput.files.length > 0;
 
-    // Drag and drop functionality with highlighting effect
-    imagePreview.addEventListener('dragenter', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        imagePreview.classList.add('dragging');  // 박스 강조
-    });
+        updateFieldState(childName, isNameValid);
+        updateFieldState(childGender, isGenderValid);
+        updateFieldState(favoriteTags, isTagsValid);
+        updateFieldState(childCharacteristics, isCharacteristicsValid);
+        updateFieldState(childImageInput, isImageValid);
+    }
 
-    imagePreview.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        imagePreview.classList.add('dragging');  // 박스 강조
-    });
+    // CSRF 토큰을 가져오는 함수
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
 
-    imagePreview.addEventListener('dragleave', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        imagePreview.classList.remove('dragging');  // 박스 강조 제거
-    });
-
-    imagePreview.addEventListener('drop', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        imagePreview.classList.remove('dragging');  // 드롭 후 강조 제거
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            loadPreview(files[0]);
-            childImageInput.files = files;  // 파일을 input에 설정
-        }
-    });
+    function sendChildInfoPost() {
+        const formData = new FormData();
+        formData.append('name', childName.value.trim());
+        formData.append('gender', childGender.value);
+        formData.append('tags', tags.join(','));  // 태그는 문자열로 변환해서 보냄
+        formData.append('characteristics', childCharacteristics.value.trim());
+        formData.append('image', childImageInput.files[0]);  // 파일도 FormData에 추가
+    
+        fetch('/setting/addchild', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': getCSRFToken()  // CSRF 토큰을 포함
+            },
+            body: formData  // FormData 객체 전송
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.resultCode === 200) {
+                alert('Child registered successfully!');
+                window.location.href = '/setting/stchildadd';
+            } else {
+                alert(data.resultMsg || 'Failed to register the child. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+    
 });
-
-function inputEvent() {
-    const childName = document.getElementById('child-name');
-    const childGender = document.getElementById('child-gender');
-    const favoriteTags = document.getElementById('favorite-tags');
-    const childCharacteristic = document.getElementById('child-characteristics')
-    const childImage = document.getElementById('child-image')
-
-    childName.addEventListener("focus", function() {
-        document.getElementById("child-name-group").classList.add("active");
-    });
-
-    childName.addEventListener("blur", function() {
-        document.getElementById("child-name-group").classList.remove("active");
-    });
-
-    childGender.addEventListener("focus", function() {
-        document.getElementById("child-gender-group").classList.add("active");
-    });
-
-    childGender.addEventListener("blur", function() {
-        document.getElementById("child-gender-group").classList.remove("active");
-    });
-
-    favoriteTags.addEventListener("focus", function() {
-        document.getElementById("child-favorite-group").classList.add("active");
-    });
-
-    favoriteTags.addEventListener("blur", function() {
-        document.getElementById("child-favorite-group").classList.remove("active");
-    });
-
-    childCharacteristic.addEventListener("focus", function() {
-        document.getElementById("child-characteristics-group").classList.add("active");
-    });
-
-    childCharacteristic.addEventListener("blur", function() {
-        document.getElementById("child-characteristics-group").classList.remove("active");
-    });
-
-    childImage.addEventListener("focus", function() {
-        document.getElementById("child-image-group").classList.add("active");
-    });
-
-    childImage.addEventListener("blur", function() {
-        document.getElementById("child-image-group").classList.remove("active");
-    });
-}
