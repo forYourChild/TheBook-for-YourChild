@@ -139,7 +139,10 @@ h2 {
 
 #tag-input input {
     padding-right: 50px;
+    width: 100%;
+    font-size: 1rem;
 }
+
 
 #tag-container {
     margin-top: -10px;
@@ -166,6 +169,15 @@ h2 {
     border: none;
     color: white;
     font-weight: bold;
+}
+
+.description-text {
+    color: #8d6e63; /* Match the color theme */
+    font-size: 0.9rem; /* Slightly smaller than the input text */
+    margin-top: -10px; /* Adjust margin to move it closer to the input */
+    margin-bottom: 20px; /* Add spacing between this text and the next element */
+    text-align: left; /* Align the description to the left */
+    font-style: italic; /* Make the text italic to indicate a hint or help text */
 }
 
 /* Image Preview */
