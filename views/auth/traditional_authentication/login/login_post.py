@@ -9,35 +9,39 @@ def hash_email(email):
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    email = request.form.get('email')
-    password = request.form.get('password')
+    try : 
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-    # Connect to the database and check if user exists
-    db = db_connect()
-    cursor = db.cursor()
+        # Connect to the database and check if user exists
+        db = db_connect()
+        cursor = db.cursor()
 
-    cursor.execute("SELECT id, password FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
+        cursor.execute("SELECT id, password FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
 
-    if user:
-        user_id, stored_password = user
-        if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
-            # Store user ID or email in the session to keep them logged in
-            session['user_id'] = user_id
-            return jsonify({
-                'resultCode': 200,
-                'resultDesc': 'Success',
-                'resultMsg': 'Login successful'
-            }), 200
+        if user:
+            user_id, stored_password = user
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                # Store user ID or email in the session to keep them logged in
+                session['user_id'] = user_id
+                return jsonify({
+                    'resultCode': 200,
+                    'resultDesc': 'Success',
+                    'resultMsg': 'Login successful'
+                }), 200
+            else:
+                return jsonify({
+                    'resultCode': 401,
+                    'resultDesc': 'Unauthorized',
+                    'resultMsg': 'Invalid email or password'
+                }), 401
         else:
             return jsonify({
-                'resultCode': 401,
-                'resultDesc': 'Unauthorized',
-                'resultMsg': 'Invalid email or password'
-            }), 401
-    else:
-        return jsonify({
-                'resultCode': 401,
-                'resultDesc': 'Unauthorized',
-                'resultMsg': 'Invalid email or password'
-            }), 401
+                    'resultCode': 401,
+                    'resultDesc': 'Unauthorized',
+                    'resultMsg': 'Invalid email or password'
+                }), 401
+    finally:
+        cursor.close()
+        db.close()

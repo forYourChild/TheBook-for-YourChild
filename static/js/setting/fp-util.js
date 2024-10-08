@@ -80,7 +80,6 @@ function sendVerificationCodeToEmail(email, isResend = false) {
         body: new URLSearchParams({
             'email': email,
             'resend': isResend,
-            'action_type' : 'reset_password'
         })
     })
     .then(response => response.json())
@@ -154,6 +153,7 @@ document.getElementById('verify-code-btn').addEventListener('click', function ()
         body: new URLSearchParams({
             'email': email,
             'verification_code': code,
+            'action_type' : 'reset_password'
             
         })
     })

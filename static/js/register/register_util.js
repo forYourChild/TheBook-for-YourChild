@@ -108,7 +108,7 @@ const sendVerificationCodeBtn = document.getElementById('send-verification-code-
 const verifyCodeBtn = document.getElementById('verify-code-btn');
 
 let timerInterval = null;
-// Function to start the timer for 10 minutes (600 seconds)
+// Function to start the timer for the remaining time
 function startTimer(duration, display) {
     // 기존 타이머가 실행 중이면 초기화
     if (timerInterval) {
@@ -117,6 +117,13 @@ function startTimer(duration, display) {
 
     let timer = duration, minutes, seconds;
     timerInterval = setInterval(function () {
+        // 남은 시간이 0보다 작아지면 타이머를 멈춤
+        if (timer < 0) {
+            clearInterval(timerInterval);  // 타이머 종료
+            display.textContent = "Time's up!";
+            return;
+        }
+
         minutes = parseInt(timer / 60, 10);
         seconds = parseInt(timer % 60, 10);
 
@@ -125,10 +132,7 @@ function startTimer(duration, display) {
 
         display.textContent = minutes + ":" + seconds;
 
-        if (--timer < 0) {
-            clearInterval(timerInterval);  // 타이머 종료
-            display.textContent = "Time's up!";
-        }
+        timer--;
     }, 1000);
 }
 
@@ -171,13 +175,13 @@ sendVerificationCodeBtn.addEventListener('click', function () {
 // Function to post email verification
 function SendVerificationCodetoEmail(email, isResend = false) {
     const postData = {
-        method : 'POST',
-        headers : {
+        method: 'POST',
+        headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRF-TOKEN': getCSRFToken()
         },
-        body : new URLSearchParams({
-            'email' : email,
+        body: new URLSearchParams({
+            'email': email,
             'resend': isResend 
         })
     };
@@ -185,49 +189,40 @@ function SendVerificationCodetoEmail(email, isResend = false) {
     .then(response => response.json())
     .then(data => {
         if (data.resultCode === 200) {
-            // 인증 코드가 성공적으로 전송된 경우
-            const startTime = data.start_time;
-            const expiresIn = data.expires_in;
+            // 서버에서 받은 expiration_time과 현재 시간을 비교하여 남은 시간 계산
+            const currentTime = Math.floor(Date.now() / 1000); // 현재 유닉스 타임스탬프
+            const expiresIn = data.expires_in - currentTime;  // 만료 시간에서 현재 시간 뺀 값
 
-            // 현재 시간을 기준으로 남은 시간을 계산
-            const currentTime = Math.floor(Date.now() / 1000); // 현재 클라이언트의 UNIX 타임스탬프
-            const remainingTime = expiresIn - (currentTime - startTime);
+            // 만료 시간이 0 이하인 경우 처리
+            if (expiresIn <= 0) {
+                alert('The verification code has already expired.');
+                return;
+            }
 
-            // 타이머를 시작
             const display = document.getElementById('timer');
-            startTimer(remainingTime, display);
-            handleResendButtonCooldown()
+            startTimer(expiresIn, display);  // 남은 시간만큼 타이머 시작
+            handleResendButtonCooldown();
 
             previousVerifiedEmail = email;
             sendVerificationCodeBtn.style.display = 'none'; // 버튼을 숨김
-
         } else if (data.resultCode === 409) {
             // 이미 가입된 이메일인 경우
             verificationPopup.style.display = 'none';
             alert(data.resultMsg);
-            
         } else if (data.resultCode === 500) {
             // 서버 오류가 발생한 경우
             verificationPopup.style.display = 'none';
             alert(data.resultMsg);
-            // 오류 메시지를 표시하고 재시도할 수 있게 유도
-
         } else if (data.resultCode === 401) {
             // 인증코드가 불일치일 경우
             verificationPopup.style.display = 'none';
             alert(data.resultMsg);
-            const codeInputs = document.querySelectorAll('.code-input');
-            codeInputs.forEach(input => {
-                input.value = ''; // Clear the input
-            });
         } else if (data.resultCode === 410) {
             // 인증 코드가 만료된 경우
             alert('Your verification code has expired. Please request a new one.');
-            // 사용자에게 새로운 인증 코드를 요청하도록 안내
-        }
-        else if (data.resultCode === 429) {
+        } else if (data.resultCode === 429) {
             verificationPopup.style.display = 'none';
-            alert('An error occurred. Please try again.');  // Show the message if they need to wait longer
+            alert('An error occurred. Please try again.');
         }
     })
     .catch(error => {
@@ -256,11 +251,19 @@ document.getElementById('resend-verification').addEventListener('click', functio
     .then(data => {
         if (data.resultCode === 200) {
             alert(data.resultMsg);
-            handleResendButtonCooldown();  // Start the cooldown timer after a successful resend
-            // 타이머를 시작
+            // 서버에서 받은 expiration_time과 현재 시간을 비교하여 남은 시간 계산
+            const currentTime = Math.floor(Date.now() / 1000); // 현재 유닉스 타임스탬프
+            const expiresIn = data.expires_in - currentTime;  // 만료 시간에서 현재 시간 뺀 값
+
+            // 만료 시간이 0 이하인 경우 처리
+            if (expiresIn <= 0) {
+                alert('The verification code has already expired.');
+                return;
+            }
+
             const display = document.getElementById('timer');
-            const remainingTime = expiresIn - (currentTime - startTime);
-            startTimer(remainingTime, display);
+            startTimer(expiresIn, display);  // 남은 시간만큼 타이머 시작
+            handleResendButtonCooldown();  // Start the cooldown timer after a successful resend
         } else if (data.resultCode === 429) {
             alert('An error occurred. Please try again.');  // Show the message if they need to wait longer
         } else {

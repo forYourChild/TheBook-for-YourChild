@@ -35,48 +35,7 @@ def send_verification_email(to_email, verification_code):
 @auth_bp.route('/send_verification', methods=['POST'])
 def send_verification():
     email = request.form['email']
-    is_resend = request.form.get('resend', 'false').lower() == 'true'  # If resend is true
-    action_type = request.form.get('action_type', 'register')  # 요청 타입: 'register' 또는 'reset_password'
-
-    db = db_connect()
-    cursor = db.cursor()
-
-    # 회원가입 또는 비밀번호 재설정 여부에 따라 다른 쿼리 실행
-    if action_type == 'register':
-        # 회원가입: 이메일이 이미 있는지 확인
-        sql_query = "SELECT email FROM users WHERE email = %s;"
-    elif action_type == 'reset_password':
-        # 비밀번호 재설정: 이메일이 등록된 계정인지 확인
-        sql_query = "SELECT email FROM users WHERE email = %s;"
-    else:
-        # 잘못된 요청 처리
-        response = {
-            'resultCode': 400,
-            'resultDesc': "Bad Request",
-            'resultMsg': "Invalid action type."
-        }
-        return jsonify(response), 400
-
-    cursor.execute(sql_query, (email,))
-    result = cursor.fetchall()
-    cursor.close()
-    db.close()
-
-    if action_type == 'register' and result:
-        response = {
-            'resultCode': 409,
-            'resultDesc': "Conflict",
-            'resultMsg': "The account is already subscribed."
-        }
-        return jsonify(response), 409
-
-    if action_type == 'reset_password' and not result:
-        response = {
-            'resultCode': 404,
-            'resultDesc': "Not Found",
-            'resultMsg': "No account found with this email."
-        }
-        return jsonify(response), 404
+    is_resend = request.form.get('resend', 'false').lower() == 'true'
 
     # Resend Cooldown Check (30-seconds cooldown)
     cooldown_key = f'resend_cooldown:{email}'
@@ -107,6 +66,7 @@ def send_verification():
                 'resultDesc': "Success",
                 'resultMsg': "Verification code resent successfully.",
                 'start_time': current_time,
+                'expires_in': expiration_time
             }
             send_verification_email(email, saved_code)
             return jsonify(response), 200
@@ -120,6 +80,7 @@ def send_verification():
         try:
             current_time = int(time.time())
             expiration_time = current_time + 900  # 15분(900초) 뒤에 만료
+            print(expiration_time, current_time)
 
             # 세션에 인증 코드 및 만료 시간 저장
             session[f'verification_code:{email}'] = code
@@ -133,7 +94,8 @@ def send_verification():
                     'resultCode': 200,
                     'resultDesc': "Success",
                     'resultMsg': "Your mail has been sent.",
-                    'start_time': current_time
+                    'start_time': current_time,
+                    'expires_in': expiration_time
                 }
                 return jsonify(response), 200
             else:
@@ -149,59 +111,83 @@ def send_verification():
                 'resultDesc': "Internal Server Error",
                 'resultMsg': f"Failed to store verification code. Error: {e}"
             }
-            return jsonify(response), 500
+            return jsonify(response), 50
 
 # 인증 코드 입력 페이지
 @auth_bp.route('/enter_code', methods=['POST'])
 def check_verification_code():
-    email = request.form['email']
-    user_code = request.form['verification_code']
+    try : 
+        email = request.form['email']
+        user_code = request.form['verification_code']
+        action_type = request.form.get('action_type', 'register')
 
-    # 세션에서 저장된 인증 코드 및 만료 시간 가져오기
-    saved_code = session.get(f'verification_code:{email}')
-    expiration_time = session.get(f'verification_code_expiration:{email}')  # 만료 시간 확인
+        db = db_connect()
+        cursor = db.cursor()
 
-    # 인증 코드가 만료되었는지 확인 (현재 시간과 비교)
-    if expiration_time and time.time() > expiration_time:
-        session.pop(f'verification_code:{email}', None)
-        session.pop(f'verification_code_expiration:{email}', None)
-        response = {
-            'resultCode': 410,
-            'resultDesc': "Gone",
-            'resultMsg': "Verification code has expired."
-        }
-        return jsonify(response), 410
+        # 이메일이 이미 존재하는지 확인
+        cursor.execute("SELECT email FROM users WHERE email = %s;", (email,))
+        result = cursor.fetchone()
 
-    if saved_code:
-        # 인증 코드가 맞는지 확인
-        if saved_code == user_code:
-            # 인증 성공 후 세션에서 관련 정보 제거
+        # 세션에서 저장된 인증 코드 및 만료 시간 가져오기
+        saved_code = session.get(f'verification_code:{email}')
+        expiration_time = session.get(f'verification_code_expiration:{email}')
+
+        # 인증 코드가 만료되었는지 확인 (현재 시간과 비교)
+        if expiration_time and time.time() > expiration_time:
             session.pop(f'verification_code:{email}', None)
             session.pop(f'verification_code_expiration:{email}', None)
-            session.pop(f'resend_cooldown:{email}', None)
-
-            # 인증 성공 후 이메일 인증 정보를 저장
-            session['email_verified'] = email
-
             response = {
-                'resultCode': 200,
-                'resultDesc': "Success",
-                'resultMsg': "Verification successful. Session data cleared."
+                'resultCode': 410,
+                'resultDesc': "Gone",
+                'resultMsg': "Verification code has expired."
             }
-            return jsonify(response), 200
+            return jsonify(response), 410
+
+        if saved_code:
+            # 인증 코드가 맞는지 확인
+            if saved_code == user_code:
+                if action_type == 'register' :
+                    if result:
+                        # 이미 가입된 이메일인 경우
+                        response = {
+                            'resultCode': 409,
+                            'resultDesc': "Conflict",
+                            'resultMsg': "The account is already subscribed."
+                        }
+                        return jsonify(response), 409
+                elif action_type == 'reset_password' :
+                    pass
+
+                # 인증 성공 후 세션에서 관련 정보 제거
+                session.pop(f'verification_code:{email}', None)
+                session.pop(f'verification_code_expiration:{email}', None)
+                session.pop(f'resend_cooldown:{email}', None)
+
+                # 인증 성공 후 이메일 인증 정보를 저장
+                session['email_verified'] = email
+
+                response = {
+                    'resultCode': 200,
+                    'resultDesc': "Success",
+                    'resultMsg': "Verification successful. Session data cleared."
+                }
+                return jsonify(response), 200
+            else:
+                # 인증 코드 불일치 (잘못된 코드)
+                response = {
+                    'resultCode': 401,
+                    'resultDesc': "Unauthorized",
+                    'resultMsg': "Invalid verification code."
+                }
+                return jsonify(response), 401
         else:
-            # 인증 코드 불일치 (잘못된 코드)
+            # 인증 코드가 없거나 만료된 경우 (세션에 없는 경우)
             response = {
-                'resultCode': 401,
-                'resultDesc': "Unauthorized",
-                'resultMsg': "Invalid verification code."
+                'resultCode': 410,
+                'resultDesc': "Gone",
+                'resultMsg': "Verification code has expired or does not exist."
             }
-            return jsonify(response), 401
-    else:
-        # 인증 코드가 없거나 만료된 경우 (세션에 없는 경우)
-        response = {
-            'resultCode': 410,
-            'resultDesc': "Gone",
-            'resultMsg': "Verification code has expired or does not exist."
-        }
-        return jsonify(response), 410
+            return jsonify(response), 410
+    finally :
+        cursor.close()
+        db.close()
