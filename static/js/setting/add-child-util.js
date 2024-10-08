@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.resultCode === 200) {
                 alert('Child registered successfully!');
-                window.location.href = '/setting/stchildadd';
+                window.location.href = '/setting/stchildinfo';
             } else {
                 alert(data.resultMsg || 'Failed to register the child. Please try again.');
             }

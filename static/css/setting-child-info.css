@@ -141,20 +141,78 @@ body {
 .child-list-container {
     border: 2px dashed #8d6e63;
     border-radius: 15px;
-    padding: 40px;
-    width: 80%; /* Set a width to create a fixed box */
-    height: 300px; /* Fixed height */
+    padding: 20px;
+    width: 80%;
     overflow-y: auto;
 }
 
-.no-children-message {
-    text-align: center;
-    margin-bottom: 20px; /* 메시지와 버튼 사이에 간격 추가 */
+.child-card {
+    display: flex;
+    align-items: center;
+    border: 2px solid #8d6e63;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #fef4d1;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;  /* 부모 요소에 맞게 너비 조정 */
+    max-width: 100%;  /* 최대 너비 설정 */
+    height: 150px;  /* 고정된 높이 */
+}
+
+.child-photo {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 20px;
+}
+
+.child-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 150px; /* 이름과 성별을 감싸는 영역 */
+}
+
+.child-info h2 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.child-info p {
+    font-size: 1rem;
+    color: #5d4037;
+}
+
+.child-likes {
+    margin-left: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 150px; /* 태그가 너무 길어지지 않도록 제한 */
+}
+
+.child-likes span {
+    background-color: #8d6e63;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.child-characteristics {
+    margin-left: 20px;
+    color: #5d4037;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
 }
 
 .add-child-btn {
-    display: inline-block; /* 버튼을 인라인 블록으로 변경하여 중앙에 위치 */
-    margin-top: 20px; /* 버튼과 텍스트 사이에 여백 추가 */
+    display: inline-block;
+    margin-top: 20px;
     background-color: #8d6e63;
     color: white;
     padding: 12px 25px;

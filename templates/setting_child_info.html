@@ -6,39 +6,29 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Your Children - The Book For Your Child</title>
     <link rel="stylesheet" href="../static/css/setting-child-info.css">
-    <!-- Google Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
-    <!-- Navigation Buttons in the Top Right Corner -->
+    <!-- Navigation Buttons -->
     <div class="top-right-buttons">
-        <!-- Profile Icon: Appears when user is logged in -->
         <span class="material-icons" id="profile-icon" style="cursor: pointer;">account_circle</span>
     </div>
 
-    <!-- Sidebar for User Info -->
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <span class="material-icons close-btn" id="close-sidebar">close</span>
             <h2 id="user-name">User Name</h2>
         </div>
         <div class="sidebar-menu">
-            <a href="/profile">
-                <span class="material-icons">person</span> Profile
-            </a>
-            <a href="/setting/stchildinfo">
-                <span class="material-icons">child_friendly</span> Child Info
-            </a>
-            <a id="sidebar-logout-btn">
-                <span class="material-icons">logout</span> Logout
-            </a>
+            <a href="/profile"><span class="material-icons">person</span> Profile</a>
+            <a href="/setting/stchildinfo"><span class="material-icons">child_friendly</span> Child Info</a>
+            <a id="sidebar-logout-btn"><span class="material-icons">logout</span> Logout</a>
         </div>
     </div>
 
-    <!-- Overlay when Sidebar is active -->
     <div id="overlay" class="overlay" style="display: none;"></div>
 
-    <!-- Header Section with Logo -->
+    <!-- Header Section -->
     <header class="hero">
         <div class="hero-content">
             <a href="/"><img src="../static/images/logo.png" alt="Storybook Logo" class="logo"></a>
@@ -50,22 +40,19 @@
     <section id="child-list-section" class="section">
         <div class="child-list-container">
             <div id="child-list">
-                <!-- If children are available, their details will be shown here. If not, the Add Child button will be displayed. -->
-                <div id="no-children-message" class="no-children-message">
-                    <p>You haven't registered any children yet.</p>
-                    <a href="/setting/stchildadd" class="btn add-child-btn">Add Child Info</a>
-                </div>
+            </div>
+            <div id="no-children-message" class="no-children-message">
+                <a href="/setting/stchildadd" class="btn add-child-btn">Add Child Info</a>
             </div>
         </div>
     </section>
 
-    <!-- Footer Section -->
     <footer class="footer">
         <p>&copy; 2024 The Book For Your Child. All Rights Reserved.</p>
     </footer>
 
-    <!-- JavaScript for sidebar toggle and dynamic child list rendering -->
-    <script src="../static/js/setting/setting-child-util.js "></script>
+    <!-- JavaScript -->
+    <script src="../static/js/setting/setting-child-util.js"></script>
     <script src="../static/js/onboarding/logout_post.js"></script>
 </body>
 </html>
