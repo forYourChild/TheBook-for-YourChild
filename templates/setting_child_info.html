@@ -46,12 +46,26 @@
         </div>
     </section>
 
+    <!-- 모달 창 구조 추가 -->
+    <div id="child-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <img id="modal-photo" src="" alt="Child Photo" class="modal-photo">
+            <h2 id="modal-name"></h2>
+            <div id="modal-gender"></div>
+            <div id="modal-likes" class="modal-likes"></div>
+            <p id="modal-characteristics"></p>
+        </div>
+    </div>
+
     <footer class="footer">
         <p>&copy; 2024 The Book For Your Child. All Rights Reserved.</p>
     </footer>
 
     <!-- JavaScript -->
+    <script src="../static/js/setting/setting_login_status.js"></script>
     <script src="../static/js/setting/setting-child-util.js"></script>
+    <script src="../static/js/onboarding/sidebar.js"></script>
     <script src="../static/js/onboarding/logout_post.js"></script>
 </body>
 </html>

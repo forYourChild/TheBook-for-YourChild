@@ -15,14 +15,7 @@ function checkLoginStatus() {
     .then(data => {
         if (data.is_logged_in) {
             // If the user is logged in, hide login button and show profile and logout buttons
-            document.getElementById('login-btn').style.display = 'none';
-            document.getElementById('profile-icon').style.display = 'inline-block';
             document.getElementById('user-name').textContent = data.user_name;
-            document.getElementById('create-btn').href = '/createbook/createbook'
-        } else {
-            // If the user is not logged in, show the login button
-            document.getElementById('login-btn').style.display = 'inline-block';
-            document.getElementById('profile-icon').style.display = 'none';
         }
     })
     .catch(error => {
