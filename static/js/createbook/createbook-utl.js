@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const warningModal = document.getElementById('warning-modal');
     const closeModalBtn = document.querySelector('.modal-close');
     const textarea = document.getElementById('teaching-input');
+    const generateStorybookBtn = document.getElementById('generate-storybook-btn');
+    
     let currentStep = 0;
 
     // 아이 선택 상태 및 가르치고자 하는 내용 상태를 추적
@@ -31,66 +33,43 @@ document.addEventListener('DOMContentLoaded', function () {
         // Enable/Disable navigation buttons (버튼 활성화/비활성화 설정)
         prevStepBtn.disabled = currentStep === 0;
         nextStepBtn.disabled = currentStep === steps.length - 1;
+
+        // Hide Next button if on the last step
+        if (currentStep === steps.length - 1) {
+            nextStepMainBtn.style.display = 'none';
+        } else {
+            nextStepMainBtn.style.display = 'block';
+        }
     }
 
     // 입력할 때마다 높이를 자동으로 조정 및 최대 글자수 제한
     textarea.addEventListener('input', function () {
-        // 최대 글자 수 100자로 제한
         if (textarea.value.length > 100) {
             textarea.value = textarea.value.substring(0, 100); // 최대 글자수 초과시 잘라냄
         }
-
-        // 스크롤 높이만큼 높이를 자동으로 늘림
-        textarea.style.height = 'auto';  // 높이를 초기화한 후
-        textarea.style.height = textarea.scrollHeight + 'px';  // 스크롤 높이에 맞춰 자동으로 높이 조절
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
     });
-
-    // Function to update step visibility
-    function updateStepVisibility() {
-        steps.forEach((step, index) => {
-            step.style.display = (index === currentStep) ? 'block' : 'none';
-        });
-
-        // Update step indicator text
-        currentStepElem.textContent = `Step ${currentStep + 1} of ${steps.length}`;
-
-        // Enable/Disable navigation buttons
-        prevStepBtn.disabled = currentStep === 0;
-        nextStepBtn.disabled = currentStep === steps.length - 1;
-
-        // Hide Next button if on the last step
-        if (currentStep === steps.length - 1) {
-            nextStepMainBtn.style.display = 'none'; // Hide Next button on the last step
-        } else {
-            nextStepMainBtn.style.display = 'block'; // Show Next button otherwise
-        }
-    }
 
     // Handle Previous and Next Step Navigation
     prevStepBtn.addEventListener('click', function () {
-        if (currentStep < steps.length - 1) {
-            if (validateCurrentStep()) {
-                currentStep++;
-                updateStepVisibility();
-            }
+        if (currentStep > 0) {
+            currentStep--;
+            updateStepVisibility();
         }
     });
 
     nextStepBtn.addEventListener('click', function () {
-        if (currentStep < steps.length - 1) {
-            if (validateCurrentStep()) {
-                currentStep++;
-                updateStepVisibility();
-            }
+        if (currentStep < steps.length - 1 && validateCurrentStep()) {
+            currentStep++;
+            updateStepVisibility();
         }
     });
 
-    document.getElementById('next-step-main-btn').addEventListener('click', function () {
-        if (currentStep < steps.length - 1) {
-            if (validateCurrentStep()) {
-                currentStep++;
-                updateStepVisibility();
-            }
+    nextStepMainBtn.addEventListener('click', function () {
+        if (currentStep < steps.length - 1 && validateCurrentStep()) {
+            currentStep++;
+            updateStepVisibility();
         }
     });
 
@@ -98,24 +77,49 @@ document.addEventListener('DOMContentLoaded', function () {
     function validateCurrentStep() {
         let isValid = true;
 
-        if (currentStep === 0) {  // Step 1: 아이 선택
-            if (!selectedChild) {
-                warningModal.style.display = 'flex';  // 경고 팝업 표시
-                isValid = false;
-            }
+        if (currentStep === 0 && !selectedChild) {
+            warningModal.style.display = 'flex';
+            isValid = false;
         }
 
-        if (currentStep === 1) {  // Step 2: 가르치고자 하는 내용 입력
-            if (teachingContentInput.value.trim() === '') {
-                document.getElementById('teaching-group').style.border = '2px solid red';
-                isValid = false;
-            } else {
-                document.getElementById('teaching-group').style.border = ''; // 경고 제거
-            }
+        if (currentStep === 1 && teachingContentInput.value.trim() === '') {
+            document.getElementById('teaching-group').style.border = '2px solid red';
+            isValid = false;
+        } else {
+            document.getElementById('teaching-group').style.border = '';
         }
 
         return isValid;
     }
+
+    // 서버로 데이터 전송
+    generateStorybookBtn.addEventListener('click', function () {
+        if (validateCurrentStep()) {
+            const data = {
+                child: selectedChild,
+                teachingContent: teachingContentInput.value
+            };
+
+            fetch('/createbook/generate-storybook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCSRFToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 서버로부터 응답 처리
+                console.log('Success:', data);
+                alert('Storybook generated successfully!');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Failed to generate storybook.');
+            });
+        }
+    });
 
     // Fetch children and render them in the list
     function fetchChildren() {
@@ -146,27 +150,19 @@ document.addEventListener('DOMContentLoaded', function () {
         children.forEach(child => {
             const childCard = document.createElement('div');
             childCard.classList.add('child-card');
-    
-            let genderIcon = '';
-            if (child.gender === 'M') {
-                genderIcon = `<span class="material-icons gender-icon">male</span>`;
-            } else if (child.gender === 'F') {
-                genderIcon = `<span class="material-icons gender-icon">female</span>`;
-            } else {
-                genderIcon = `<span class="material-icons gender-icon">transgender</span>`;
-            }
 
+            let genderIcon = child.gender === 'M' ? 'male' : child.gender === 'F' ? 'female' : 'transgender';
             childCard.innerHTML = `
                 <img src="${child.image}" alt="${child.name}'s photo" class="child-photo">
                 <div class="child-info">
                     <h2 id='child-name'>${child.name}</h2>
-                    <div class="child-gender">${genderIcon}</div>
+                    <div class="child-gender"><span class="material-icons">${genderIcon}</span></div>
                 </div>
                 <div class="child-likes">
                     ${child.likes.map(like => `<span class="like-tag">${like}</span>`).join('')}
                 </div>
                 <div class="child-characteristics" title="${child.characteristics}">
-                    ${truncateText(child.characteristics, 100)} <!-- 길이를 제한하는 함수 -->
+                    ${truncateText(child.characteristics, 100)}
                 </div>
             `;
 
@@ -193,18 +189,14 @@ document.addEventListener('DOMContentLoaded', function () {
             card.classList.remove('selected');
         });
 
-        // 선택된 아이를 가진 요소 찾기
         const selectedCard = Array.from(document.querySelectorAll('.child-card')).find(card => {
             return card.querySelector('h2').innerText === childName;
         });
 
-        // 선택된 카드가 있으면 class 추가, 없으면 경고
         if (selectedCard) {
             selectedCard.classList.add('selected');
             selectedChild = childName;
             document.getElementById('child-list').style.border = ''; // 경고 제거
-        } else {
-            console.error('Selected child not found.');
         }
     }
 
@@ -213,12 +205,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
 
-    // 팝업 닫기 버튼 동작
     closeModalBtn.addEventListener('click', function () {
         warningModal.style.display = 'none';
     });
 
-    // 팝업 외부 클릭 시 팝업 닫기
     window.addEventListener('click', function (event) {
         if (event.target === warningModal) {
             warningModal.style.display = 'none';
